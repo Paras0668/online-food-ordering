@@ -13,10 +13,12 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://online-food-ordering-bwt64y84i-paras-8d91.vercel.app",
   "https://online-food-ordering-psi.vercel.app",
+  "https://online-food-ordering-ibail2zzq-paras-8d91.vercel.app",
 ];
 
 app.use(
