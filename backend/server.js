@@ -7,8 +7,11 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
+const server = http.createServer(app);
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -30,6 +33,24 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+// Socket.IO server
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+
+  socket.on("disconnect", (reason) => {
+    console.log("Socket disconnected:", socket.id, reason);
+  });
+});
+
+// API rate limit
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -39,6 +60,7 @@ const apiLimiter = rateLimit({
 
 app.use("/api", apiLimiter);
 
+// Existing routes — preserved
 app.use("/api/foods", require("./routes/foodRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
@@ -46,6 +68,7 @@ app.get("/", (req, res) => {
   res.send("CraveCart Backend is Running!");
 });
 
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
 
@@ -61,7 +84,7 @@ mongoose
   .then(() => {
     console.log("MongoDB Connected Successfully");
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
