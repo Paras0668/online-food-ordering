@@ -20,17 +20,30 @@ function FoodMenu({ searchTerm = "" }) {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          `${API_URL}/api/foods`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(`${API_URL}/api/foods`, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to fetch foods");
+          throw new Error(`Food API failed: ${response.status}`);
         }
 
         const data = await response.json();
-        setFoods(data.foods || []);
+
+        // Supports all API response formats
+        let foodList = [];
+
+        if (Array.isArray(data)) {
+          foodList = data;
+        } else if (Array.isArray(data.data)) {
+          foodList = data.data;
+        } else if (Array.isArray(data.foods)) {
+          foodList = data.foods;
+        }
+
+        console.log("CraveCart food data:", foodList);
+
+        setFoods(foodList);
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error("Error fetching foods:", err);
@@ -50,15 +63,19 @@ function FoodMenu({ searchTerm = "" }) {
 
   const categories = [
     "All",
-    ...new Set(foods.map((food) => food.category).filter(Boolean)),
+    ...new Set(
+      foods.map((food) => food.category).filter(Boolean)
+    ),
   ];
 
-  const search = searchTerm.toLowerCase();
+  const search = searchTerm.trim().toLowerCase();
 
   const filteredFoods = foods.filter((food) => {
+    const name = (food.name || "").toLowerCase();
+    const category = (food.category || "").toLowerCase();
+
     const matchesSearch =
-      (food.name || "").toLowerCase().includes(search) ||
-      (food.category || "").toLowerCase().includes(search);
+      name.includes(search) || category.includes(search);
 
     const matchesCategory =
       selectedCategory === "All" ||
@@ -68,10 +85,16 @@ function FoodMenu({ searchTerm = "" }) {
   });
 
   return (
-    <section id="menu" className="max-w-7xl mx-auto px-6 py-16">
+    <section
+      id="menu"
+      className="max-w-7xl mx-auto px-6 py-16"
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-10">
         <div>
-          <p className="text-orange-500 font-semibold">OUR MENU</p>
+          <p className="text-orange-500 font-semibold">
+            OUR MENU
+          </p>
+
           <h2 className="text-3xl font-bold text-gray-800 mt-1">
             Explore Delicious Food
           </h2>
@@ -106,30 +129,40 @@ function FoodMenu({ searchTerm = "" }) {
       {loading ? (
         <div className="text-center py-16">
           <div className="text-5xl mb-4">🍽️</div>
+
           <h3 className="text-xl font-bold text-gray-700">
             Loading delicious food...
           </h3>
-          <p className="text-gray-500 mt-2">Please wait a moment.</p>
+
+          <p className="text-gray-500 mt-2">
+            Please wait a moment.
+          </p>
         </div>
       ) : error ? (
         <div className="text-center py-16">
           <p className="text-red-600">{error}</p>
+
           <p className="text-sm text-gray-500 mt-2">
-            Check the backend connection and try refreshing the page.
+            Check the backend connection and refresh the page.
           </p>
         </div>
       ) : filteredFoods.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredFoods.map((food) => (
-            <FoodCard key={food._id} food={food} />
+          {filteredFoods.map((food, index) => (
+            <FoodCard
+              key={food._id || food.id || index}
+              food={food}
+            />
           ))}
         </div>
       ) : (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">😕</div>
+
           <h3 className="text-xl font-bold text-gray-700">
             No food found
           </h3>
+
           <p className="text-gray-500 mt-2">
             Try searching for Pizza, Burger or Biryani.
           </p>
