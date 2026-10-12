@@ -2,13 +2,15 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:5000";
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
 
 function SocketConnection() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL);
+    const socket = io(API_URL);
 
     socket.on("connect", () => {
       setConnected(true);
@@ -21,6 +23,7 @@ function SocketConnection() {
     });
 
     socket.on("connect_error", (error) => {
+      setConnected(false);
       console.error("Socket connection error:", error.message);
     });
 

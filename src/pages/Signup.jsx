@@ -1,177 +1,126 @@
-import { useState } from "react"
 
-function Signup({
-  openLogin,
-  signupUser,
-}) {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [message, setMessage] = useState("")
-  const [loading, setLoading] = useState(false)
+import { useState } from "react";
+
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
+
+function Signup({ openLogin, signupUser }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+    setMessage("");
 
-    setMessage("")
-
-    // Check empty fields
     if (!name || !email || !password) {
-      setMessage("Please fill all fields")
-      return
+      setMessage("Please fill all fields");
+      return;
     }
 
-    // Check password length
     if (password.length < 6) {
-      setMessage("Password must be at least 6 characters")
-      return
+      setMessage("Password must be at least 6 characters");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      // Send signup data to backend
-      const response = await fetch(
-        "http://localhost:5000/api/auth/signup",
-        {
-          method: "POST",
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const data = await response.json();
 
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-          }),
-        }
-      )
-
-      const data = await response.json()
-
-      // Backend returned an error
       if (!response.ok) {
-        setMessage(data.message || "Signup failed")
-        setLoading(false)
-        return
+        setMessage(data.message || "Signup failed");
+        return;
       }
 
-      // Save registered user information
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      )
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Keep existing App.jsx signup flow
-      signupUser(data.user)
+      // Preserve the existing App.jsx signup flow.
+      signupUser(data.user);
 
-      setMessage("Account created successfully!")
+      setMessage("Account created successfully!");
 
-      // Clear form
-      setName("")
-      setEmail("")
-      setPassword("")
+      setName("");
+      setEmail("");
+      setPassword("");
     } catch (error) {
-      console.error("Signup Error:", error)
-
-      setMessage(
-        "Unable to connect to server"
-      )
+      console.error("Signup Error:", error);
+      setMessage("Unable to connect to server");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false)
-  }
+  };
 
   return (
     <div className="min-h-screen bg-orange-50 flex items-center justify-center px-4">
-
       <div className="bg-white w-full max-w-md rounded-3xl shadow-xl p-8">
-
-        {/* Header */}
         <div className="text-center">
-
-          <div className="text-6xl mb-4">
-            🍕
-          </div>
-
+          <div className="text-6xl mb-4">🍕</div>
           <h1 className="text-3xl font-bold text-gray-800">
             Create Your CraveCart Account
           </h1>
-
           <p className="text-gray-500 mt-3">
             Join CraveCart and start ordering your favourite food.
           </p>
-
         </div>
 
-        {/* Signup Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 space-y-5"
-        >
-
-          {/* Name */}
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-
-            <label className="font-medium text-gray-700">
-              Full Name
-            </label>
-
+            <label className="font-medium text-gray-700">Full Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => {
-                setName(e.target.value)
-                setMessage("")
+                setName(e.target.value);
+                setMessage("");
               }}
               placeholder="Enter your name"
+              required
               className="w-full border border-gray-200 rounded-xl px-4 py-3 mt-2 outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
             />
-
           </div>
 
-          {/* Email */}
           <div>
-
-            <label className="font-medium text-gray-700">
-              Email
-            </label>
-
+            <label className="font-medium text-gray-700">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value)
-                setMessage("")
+                setEmail(e.target.value);
+                setMessage("");
               }}
               placeholder="Enter your email"
+              required
               className="w-full border border-gray-200 rounded-xl px-4 py-3 mt-2 outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
             />
-
           </div>
 
-          {/* Password */}
           <div>
-
-            <label className="font-medium text-gray-700">
-              Password
-            </label>
-
+            <label className="font-medium text-gray-700">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => {
-                setPassword(e.target.value)
-                setMessage("")
+                setPassword(e.target.value);
+                setMessage("");
               }}
               placeholder="Create a password"
+              required
               className="w-full border border-gray-200 rounded-xl px-4 py-3 mt-2 outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
             />
-
           </div>
 
-          {/* Message */}
           {message && (
             <p
               className={`text-center text-sm ${
@@ -184,37 +133,28 @@ function Signup({
             </p>
           )}
 
-          {/* Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 transition disabled:opacity-60"
           >
-            {loading
-              ? "Creating Account..."
-              : "Create Account"}
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
-
         </form>
 
-        {/* Login Link */}
         <p className="text-center text-gray-500 mt-6">
-
           Already have a CraveCart account?{" "}
-
           <button
+            type="button"
             onClick={openLogin}
             className="text-orange-500 font-semibold hover:underline"
           >
             Login
           </button>
-
         </p>
-
       </div>
-
     </div>
-  )
+  );
 }
 
-export default Signup
+export default Signup;
